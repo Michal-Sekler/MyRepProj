@@ -1,0 +1,130 @@
+﻿@using System.Collections
+@{
+    ViewBag.Title = "Repositories";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Git Repositories</h2>
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+
+<label for="route_no" class="">search: </label>
+<input type="text" class="form-control form-control-lg" id="route_no" name="route_no" required="required" />
+<input type="button" class="btn btn-outline-secondary" value="Search" id="btn_get_repos" /><i class="fa fa-search"></i>
+<input type="button" class="btn btn-outline-secondary" value="new search" id="emptyData" />
+<input type="button" class="btn btn-outline-success" value="history" id="history" />
+<div id="items-container">
+</div>
+<style type="text/css">
+    div.gallery {
+        border: 1px solid #ccc;
+    }
+
+        div.gallery:hover {
+            border: 1px solid #777;
+        }
+
+        div.gallery img {
+            width: 100%;
+            height: auto;
+        }
+
+    div.desc {
+        padding: 15px;
+        text-align: center;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    .responsive {
+        padding: 0 6px;
+        float: left;
+        width: 24.99999%;
+    }
+
+    .clearfix:after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+</style>
+
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+<script type="text/javascript">
+    var searchedItems = [];
+
+
+    //Perform the request from github .
+    $("#btn_get_repos").click(function () {
+        var searchedValue = $("#route_no").val();
+        if (searchedValue == "") {
+            alert('The search field is required');
+            return;
+        }
+        saveSession(searchedValue);
+        $.ajax({
+            type: "GET",
+            url: 'https://api.github.com/search/repositories?q=' + searchedValue,
+            data: param = "",
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (data) {
+                $.each(data.items, function (i, item) {
+                    console.log(item);
+                    var html_to_append = '<div class="responsive" ><div class="gallery" ><img src= "' + item.owner.avatar_url + 'alt="Avatar" /><div class="desc">' + item.name + ' </br> <a id="btn_rep" class="btn btn-primary" href="' + item.html_url + '" target="_blank">Visit me >></a></div></div></div>';
+                    $("#items-container").append(html_to_append);
+                });
+            },
+            error: function () {
+                alert('Not OK');
+            }
+        });
+    });
+
+    //clean data and textBox
+    $("#emptyData").click(function () {
+        $('#items-container').empty();
+        document.getElementById('route_no').value = "";
+    });
+
+    //display all the items the user searched.
+    $("#history").click(function () {
+        $('#items-container').empty();
+        for (var item = 0; item < searchedItems[0].length; item++) {
+            $.ajax({
+                type: "GET",
+                url: "https://api.github.com/search/repositories?q=" + searchedItems[0][item] + "",
+                dataType: "json",
+                data: param = "",
+                success: function (data) {
+                    $.each(data.items, function (i, item) {
+                        var html_to_append = '<div class="responsive" ><div class="gallery" ><img src= "' + item.owner.avatar_url + 'alt="Avatar" /><div class="desc">' + item.name + ' </br> <a id="btn_rep" class="btn btn-primary" href="' + item.html_url + '" target="_blank">Visit me>></a>   </div></div></div >';
+                        $('#items-container').append(html_to_append);
+                    });
+                }
+            });
+        }
+    });
+
+    //save in the items the user searched.
+    function saveSession(searchName) {
+        $.ajax({
+            type: "POST",
+            traditional: true,
+            url: "../Repositories/addSearchToSession",
+            data: { searchName: searchName },
+            success: function (data) {
+                displayHitory(data);
+            }
+        });
+    }
+
+    function displayHitory(data) {
+        $('#items-container').empty();
+        searchedItems = JSON.parse("[" + data + "]");
+    }
+</script>
+
+
